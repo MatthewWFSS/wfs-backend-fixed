@@ -1,0 +1,31 @@
+{
+  "name": "wfss-backend",
+  "version": "1.0.0",
+  "description": "WFS&S Backend API for Stripe integration and payment processing",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "stripe": "^14.12.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "wfss",
+    "stripe",
+    "payments",
+    "financial-services"
+  ],
+  "author": "WFS&S Financial Services",
+  "license": "MIT"
+}

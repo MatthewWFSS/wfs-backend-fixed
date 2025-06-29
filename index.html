@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WFS&S - We Front Service & Support</title>
+    <meta name="description" content="WFS&S provides virtual credit cards with Service Now, Pay Later model. Access services immediately while paying over time with refund incentives.">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="WFS&S - We Front Service & Support">
+    <meta property="og:description" content="Virtual credit cards with Service Now, Pay Later model. Get services now, pay later with refund benefits.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wfss.com">
+    
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 2L37 9L35 28L20 38L5 28L3 9L20 2Z" fill="#DC2626"/>
+                    <path d="M20 8L12 12V20L20 24L28 20V12L20 8Z" fill="#FFFFFF"/>
+                </svg>
+                <span class="logo-text">WFS&S</span>
+            </div>
+            <nav class="nav">
+                <a href="#services" class="nav-link">Services</a>
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Service Now, Pay Later</h1>
+                    <p class="hero-subtitle">Get the services you need immediately with virtual credit cards. Pay over time with up to 20% refunds for on-time payments.</p>
+                    
+                    <div class="hero-buttons">
+                        <button id="stripeCheckoutBtn" class="btn btn-primary">
+                            Get Your Virtual Card
+                        </button>
+                        <button id="stripeIdentityBtn" class="btn btn-secondary">
+                            Verify Identity
+                        </button>
+                    </div>
+                    
+                    <div class="hero-features">
+                        <div class="feature">
+                            <div class="feature-icon">💳</div>
+                            <span>Instant Virtual Cards</span>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">⚡</div>
+                            <span>Immediate Access</span>
+                        </div>
+                        <div class="feature">
+                            <div class="feature-icon">💰</div>
+                            <span>Up to 20% Refunds</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="services">
+            <div class="container">
+                <h2 class="section-title">Our Services</h2>
+                <div class="services-grid">
+                    <div class="service-card">
+                        <div class="service-icon">🏢</div>
+                        <h3>Business Services</h3>
+                        <p>Access professional services immediately with flexible payment terms.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">🛡️</div>
+                        <h3>Virtual Credit Cards</h3>
+                        <p>Secure virtual cards for online purchases with built-in fraud protection.</p>
+                    </div>
+                    <div class="service-card">
+                        <div class="service-icon">📊</div>
+                        <h3>Financial Management</h3>
+                        <p>Track spending, manage payments, and earn refunds for timely payments.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section id="how-it-works" class="how-it-works">
+            <div class="container">
+                <h2 class="section-title">How It Works</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Sign Up & Verify</h3>
+                        <p>Create your account and verify your identity with our secure process.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Get Your Virtual Card</h3>
+                        <p>Receive your virtual credit card instantly after approval.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Use Services Now</h3>
+                        <p>Access services immediately and pay over time with flexible terms.</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>Earn Refunds</h3>
+                        <p>Pay on time and earn up to 20% refunds on your service fees.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="contact">
+            <div class="container">
+                <h2 class="section-title">Get Started Today</h2>
+                <p class="contact-subtitle">Ready to access services now and pay later? Start your verification process.</p>
+                
+                <div class="contact-buttons">
+                    <button id="stripeCheckoutBtn2" class="btn btn-primary">
+                        Start Application
+                    </button>
+                    <button id="stripeIdentityBtn2" class="btn btn-secondary">
+                        Verify Identity
+                    </button>
+                </div>
+                
+                <div class="contact-info">
+                    <p>Questions? Contact us at <a href="mailto:support@wfss.com">support@wfss.com</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo">
+                        <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 2L37 9L35 28L20 38L5 28L3 9L20 2Z" fill="#DC2626"/>
+                            <path d="M20 8L12 12V20L20 24L28 20V12L20 8Z" fill="#FFFFFF"/>
+                        </svg>
+                        <span class="logo-text">WFS&S</span>
+                    </div>
+                    <p class="footer-description">We Front Service & Support - Service Now, Pay Later</p>
+                </div>
+                
+                <div class="footer-links">
+                    <div class="footer-section">
+                        <h4>Services</h4>
+                        <ul>
+                            <li><a href="#services">Virtual Cards</a></li>
+                            <li><a href="#services">Business Services</a></li>
+                            <li><a href="#services">Financial Management</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a href="mailto:support@wfss.com">Contact Support</a></li>
+                            <li><a href="#how-it-works">How It Works</a></li>
+                            <li><a href="#faq">FAQ</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="footer-section">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="terms.html">Terms of Use</a></li>
+                            <li><a href="privacy.html">Privacy Policy</a></li>
+                            <li><a href="#compliance">Compliance</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 WFS&S Financial Services. All rights reserved. | Registered in Arizona, serving nationwide.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
