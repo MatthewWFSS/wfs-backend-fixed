@@ -12,9 +12,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...', {
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
+
+
 
 // Security middleware
 app.use(helmet());
