@@ -11,12 +11,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize Stripe with secret key
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY, {
+// ✅ Correct Stripe initialization with ESModule style
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
-
-
 
 // Security middleware
 app.use(helmet());
@@ -32,8 +30,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: { error: 'Too many requests, please try again later.' }
 });
 app.use(limiter);
@@ -42,9 +40,9 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint
+// ✅ Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'WFS&S Backend API',
@@ -52,54 +50,51 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Stripe Checkout Session Creation
+// ✅ Create Checkout Session
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { amount = 50000, currency = 'usd', customer_email } = req.body;
-    
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
-          currency: currency,
+          currency,
           product_data: {
             name: 'WFS&S Virtual Card Setup',
             description: 'Service Now, Pay Later - Virtual Credit Card',
             images: ['https://example.com/wfss-logo.png']
           },
-          unit_amount: amount // Amount in cents
+          unit_amount: amount
         },
         quantity: 1
       }],
       mode: 'payment',
       success_url: 'https://wfss-frontend.netlify.app/success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://wfss-frontend.netlify.app/cancel',
-      customer_email: customer_email,
+      customer_email,
       metadata: {
         service: 'virtual_card_setup',
         provider: 'wfss'
       }
     });
 
-    res.json({ 
+    res.json({
       sessionId: session.id,
       url: session.url,
       success: true
     });
   } catch (error) {
     console.error('Stripe Checkout Error:', error);
-    res.status(400).json({ 
-      error: error.message,
-      success: false
-    });
+    res.status(400).json({ error: error.message, success: false });
   }
 });
 
-// Stripe Identity Verification Session
+// ✅ Identity Verification Session
 app.post('/api/stripe/create-identity-session', async (req, res) => {
   try {
     const { return_url } = req.body;
-    
+
     const verificationSession = await stripe.identity.verificationSessions.create({
       type: 'document',
       metadata: {
@@ -117,20 +112,16 @@ app.post('/api/stripe/create-identity-session', async (req, res) => {
     });
   } catch (error) {
     console.error('Stripe Identity Error:', error);
-    res.status(400).json({ 
-      error: error.message,
-      success: false
-    });
+    res.status(400).json({ error: error.message, success: false });
   }
 });
 
-// Stripe Webhook Handler
+// ✅ Stripe Webhook Handler
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
-
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
@@ -138,18 +129,15 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle the event
   switch (event.type) {
     case 'checkout.session.completed':
-      console.log('Payment successful:', event.data.object);
-      // Handle successful payment
+      console.log('✅ Payment success:', event.data.object);
       break;
     case 'identity.verification_session.verified':
-      console.log('Identity verification completed:', event.data.object);
-      // Handle successful identity verification
+      console.log('✅ Identity verified:', event.data.object);
       break;
     case 'identity.verification_session.requires_input':
-      console.log('Identity verification requires input:', event.data.object);
+      console.log('⚠️ Identity needs input:', event.data.object);
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);
@@ -158,22 +146,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
   res.json({ received: true });
 });
 
-// Refund Payment Endpoint
+// ✅ Refund Payment
 app.post('/api/refund-payment', async (req, res) => {
   try {
     const { payment_intent_id, amount, reason = 'requested_by_customer' } = req.body;
 
     if (!payment_intent_id) {
-      return res.status(400).json({ 
-        error: 'payment_intent_id is required',
-        success: false
-      });
+      return res.status(400).json({ error: 'payment_intent_id is required', success: false });
     }
 
     const refund = await stripe.refunds.create({
       payment_intent: payment_intent_id,
-      amount: amount, // Optional: partial refund amount in cents
-      reason: reason,
+      amount,
+      reason,
       metadata: {
         service: 'wfss_refund',
         timestamp: new Date().toISOString()
@@ -188,14 +173,11 @@ app.post('/api/refund-payment', async (req, res) => {
     });
   } catch (error) {
     console.error('Refund Error:', error);
-    res.status(400).json({ 
-      error: error.message,
-      success: false
-    });
+    res.status(400).json({ error: error.message, success: false });
   }
 });
 
-// Terms of Service Endpoint
+// ✅ Terms of Service & Privacy
 app.get('/api/terms', (req, res) => {
   res.json({
     title: 'WFS&S Terms of Use',
@@ -205,7 +187,6 @@ app.get('/api/terms', (req, res) => {
   });
 });
 
-// Privacy Policy Endpoint
 app.get('/api/privacy', (req, res) => {
   res.json({
     title: 'WFS&S Privacy Policy',
@@ -215,7 +196,7 @@ app.get('/api/privacy', (req, res) => {
   });
 });
 
-// Test endpoint for development
+// ✅ Test route
 app.get('/api/test', (req, res) => {
   res.json({
     message: 'WFS&S Backend API is working!',
@@ -232,18 +213,15 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// Error handling middleware
+// ✅ Error handling
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    success: false
-  });
+  res.status(500).json({ error: 'Something went wrong!', success: false });
 });
 
-// 404 handler
+// ✅ 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Endpoint not found',
     available_endpoints: [
       'GET /api/health',
@@ -258,11 +236,10 @@ app.use('*', (req, res) => {
   });
 });
 
-// Start the server
+// ✅ Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 WFS&S Backend API running on port ${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🧪 Test endpoint: http://localhost:${PORT}/api/test`);
 });
 
+// ✅ Needed for Replit/Vercel/etc.
 export default app;
