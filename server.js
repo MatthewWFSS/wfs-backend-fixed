@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -11,10 +10,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ✅ Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
 
+// ✅ Security middleware
 app.use(helmet());
 app.use(cors({
   origin: [
@@ -33,9 +34,42 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// ✅ Webhook route comes FIRST, using raw body
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // ✅ Handle events
+  switch (event.type) {
+    case 'checkout.session.completed':
+      console.log('✅ Payment success:', event.data.object);
+      break;
+    case 'identity.verification_session.verified':
+      console.log('✅ Identity verified:', event.data.object);
+      break;
+    case 'identity.verification_session.requires_input':
+      console.log('⚠️ Identity needs input:', event.data.object);
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.json({ received: true });
+});
+
+// ✅ AFTER webhook, use JSON parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -45,6 +79,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ✅ Create Stripe Checkout session
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { amount = 50000, currency = 'usd', customer_email } = req.body;
@@ -87,6 +122,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
+// ✅ Create Stripe Identity session
 app.post('/api/stripe/create-identity-session', async (req, res) => {
   try {
     const { return_url } = req.body;
@@ -112,35 +148,7 @@ app.post('/api/stripe/create-identity-session', async (req, res) => {
   }
 });
 
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  switch (event.type) {
-    case 'checkout.session.completed':
-      console.log('✅ Payment success:', event.data.object);
-      break;
-    case 'identity.verification_session.verified':
-      console.log('✅ Identity verified:', event.data.object);
-      break;
-    case 'identity.verification_session.requires_input':
-      console.log('⚠️ Identity needs input:', event.data.object);
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  res.json({ received: true });
-});
-
+// ✅ Refund route
 app.post('/api/refund-payment', async (req, res) => {
   try {
     const { payment_intent_id, amount, reason = 'requested_by_customer' } = req.body;
@@ -171,6 +179,7 @@ app.post('/api/refund-payment', async (req, res) => {
   }
 });
 
+// ✅ Legal docs
 app.get('/api/terms', (req, res) => {
   res.json({
     title: 'WFS&S Terms of Use',
@@ -189,6 +198,7 @@ app.get('/api/privacy', (req, res) => {
   });
 });
 
+// ✅ Diagnostic
 app.get('/api/test', (req, res) => {
   res.json({
     message: 'WFS&S Backend API is working!',
@@ -205,11 +215,13 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// ✅ Error handler
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack);
   res.status(500).json({ error: 'Something went wrong!', success: false });
 });
 
+// ✅ 404 fallback
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
@@ -226,6 +238,7 @@ app.use('*', (req, res) => {
   });
 });
 
+// ✅ Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 WFS&S Backend API running on port ${PORT}`);
 });
