@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -5,18 +6,15 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import Stripe from 'stripe';
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Correct Stripe initialization with ESModule style
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
 
-// Security middleware
 app.use(helmet());
 app.use(cors({
   origin: [
@@ -28,7 +26,6 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -36,11 +33,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -50,7 +45,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ✅ Create Checkout Session
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { amount = 50000, currency = 'usd', customer_email } = req.body;
@@ -76,6 +70,9 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       metadata: {
         service: 'virtual_card_setup',
         provider: 'wfss'
+      },
+      automatic_tax: {
+        enabled: true
       }
     });
 
@@ -90,7 +87,6 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
-// ✅ Identity Verification Session
 app.post('/api/stripe/create-identity-session', async (req, res) => {
   try {
     const { return_url } = req.body;
@@ -116,7 +112,6 @@ app.post('/api/stripe/create-identity-session', async (req, res) => {
   }
 });
 
-// ✅ Stripe Webhook Handler
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -146,7 +141,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
   res.json({ received: true });
 });
 
-// ✅ Refund Payment
 app.post('/api/refund-payment', async (req, res) => {
   try {
     const { payment_intent_id, amount, reason = 'requested_by_customer' } = req.body;
@@ -177,7 +171,6 @@ app.post('/api/refund-payment', async (req, res) => {
   }
 });
 
-// ✅ Terms of Service & Privacy
 app.get('/api/terms', (req, res) => {
   res.json({
     title: 'WFS&S Terms of Use',
@@ -196,7 +189,6 @@ app.get('/api/privacy', (req, res) => {
   });
 });
 
-// ✅ Test route
 app.get('/api/test', (req, res) => {
   res.json({
     message: 'WFS&S Backend API is working!',
@@ -213,13 +205,11 @@ app.get('/api/test', (req, res) => {
   });
 });
 
-// ✅ Error handling
 app.use((err, req, res, next) => {
   console.error('Server Error:', err.stack);
   res.status(500).json({ error: 'Something went wrong!', success: false });
 });
 
-// ✅ 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
@@ -236,10 +226,8 @@ app.use('*', (req, res) => {
   });
 });
 
-// ✅ Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 WFS&S Backend API running on port ${PORT}`);
 });
 
-// ✅ Needed for Replit/Vercel/etc.
 export default app;
