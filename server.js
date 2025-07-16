@@ -64,11 +64,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
   res.json({ received: true });
 });
 
-// ✅ Parse JSON after webhook
+// ✅ JSON parsing (after webhook)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Static storage for users
+// ✅ Static user storage
 const USERS_FILE = path.join(process.cwd(), 'users.json');
 
 function readUsers() {
@@ -84,7 +84,7 @@ function writeUsers(users) {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 }
 
-// ✅ Save user signup info
+// ✅ Sign up
 app.post('/api/signup', (req, res) => {
   const { fullName, dob, address, email, phone, password } = req.body;
 
@@ -93,6 +93,10 @@ app.post('/api/signup', (req, res) => {
   }
 
   const users = readUsers();
+  if (users.find(u => u.email === email)) {
+    return res.status(409).json({ error: 'User already exists', success: false });
+  }
+
   const newUser = {
     id: 'user_' + (users.length + 1).toString().padStart(3, '0'),
     fullName,
@@ -111,7 +115,20 @@ app.post('/api/signup', (req, res) => {
   res.json({ success: true, user: newUser });
 });
 
-// ✅ Admin dashboard summary
+// ✅ Login route
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
+  const users = readUsers();
+
+  const found = users.find(u => u.email === email && u.password === password);
+  if (!found) {
+    return res.status(401).json({ error: 'Invalid email or password', success: false });
+  }
+
+  res.json({ success: true, user: found });
+});
+
+// ✅ Admin summary
 app.get('/api/admin/summary', (req, res) => {
   const users = readUsers();
   const totalUsers = users.length;
@@ -136,7 +153,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ✅ Stripe checkout session
+// ✅ Checkout session
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { amount = 50000, currency = 'usd', customer_email } = req.body;
@@ -173,7 +190,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
   }
 });
 
-// ✅ Stripe identity session
+// ✅ Identity session
 app.post('/api/stripe/create-identity-session', async (req, res) => {
   try {
     const { return_url } = req.body;
@@ -199,7 +216,7 @@ app.post('/api/stripe/create-identity-session', async (req, res) => {
   }
 });
 
-// ✅ Refund route
+// ✅ Refund
 app.post('/api/refund-payment', async (req, res) => {
   try {
     const { payment_intent_id, amount, reason = 'requested_by_customer' } = req.body;
@@ -253,19 +270,7 @@ app.get('/api/privacy', (req, res) => {
 app.get('/api/test', (req, res) => {
   res.json({
     message: 'WFS&S Backend API is working!',
-    timestamp: new Date().toISOString(),
-    endpoints: [
-      'GET /api/health',
-      'POST /api/signup',
-      'GET /api/admin/summary',
-      'POST /api/stripe/create-checkout-session',
-      'POST /api/stripe/create-identity-session',
-      'POST /api/stripe/webhook',
-      'POST /api/refund-payment',
-      'GET /api/terms',
-      'GET /api/privacy',
-      'GET /api/test'
-    ]
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -282,6 +287,7 @@ app.use('*', (req, res) => {
     available_endpoints: [
       'GET /api/health',
       'POST /api/signup',
+      'POST /api/login',
       'GET /api/admin/summary',
       'POST /api/stripe/create-checkout-session',
       'POST /api/stripe/create-identity-session',
