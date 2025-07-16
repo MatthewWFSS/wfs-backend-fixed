@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -10,12 +12,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ Initialize Stripe with secret key
+// ✅ Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
 
-// ✅ Security middleware
+// ✅ Middleware
 app.use(helmet());
 app.use(cors({
   origin: [
@@ -26,15 +28,13 @@ app.use(cors({
   ],
   credentials: true
 }));
-
-const limiter = rateLimit({
+app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { error: 'Too many requests, please try again later.' }
-});
-app.use(limiter);
+}));
 
-// ✅ Webhook route comes FIRST, using raw body
+// ✅ Stripe webhook must go BEFORE express.json()
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -47,7 +47,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ✅ Handle events
   switch (event.type) {
     case 'checkout.session.completed':
       console.log('✅ Payment success:', event.data.object);
@@ -65,9 +64,67 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
   res.json({ received: true });
 });
 
-// ✅ AFTER webhook, use JSON parsing
+// ✅ Parse JSON after webhook
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ Static storage for users
+const USERS_FILE = path.join(process.cwd(), 'users.json');
+
+function readUsers() {
+  try {
+    const data = fs.readFileSync(USERS_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeUsers(users) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
+// ✅ Save user signup info
+app.post('/api/signup', (req, res) => {
+  const { fullName, dob, address, email, phone, password } = req.body;
+
+  if (!fullName || !email || !phone || !password) {
+    return res.status(400).json({ error: 'Missing required fields', success: false });
+  }
+
+  const users = readUsers();
+  const newUser = {
+    id: 'user_' + (users.length + 1).toString().padStart(3, '0'),
+    fullName,
+    dob,
+    address,
+    email,
+    phone,
+    password,
+    safetyScore: 600,
+    spending: 0
+  };
+
+  users.push(newUser);
+  writeUsers(users);
+
+  res.json({ success: true, user: newUser });
+});
+
+// ✅ Admin dashboard summary
+app.get('/api/admin/summary', (req, res) => {
+  const users = readUsers();
+  const totalUsers = users.length;
+  const avgSafetyScore = totalUsers === 0 ? 0 : Math.round(users.reduce((sum, u) => sum + u.safetyScore, 0) / totalUsers);
+  const totalSpending = users.reduce((sum, u) => sum + u.spending, 0);
+
+  res.json({
+    users,
+    totalUsers,
+    avgSafetyScore,
+    totalSpending
+  });
+});
 
 // ✅ Health check
 app.get('/api/health', (req, res) => {
@@ -79,7 +136,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ✅ Create Stripe Checkout session
+// ✅ Stripe checkout session
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   try {
     const { amount = 50000, currency = 'usd', customer_email } = req.body;
@@ -106,23 +163,17 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
         service: 'virtual_card_setup',
         provider: 'wfss'
       },
-      automatic_tax: {
-        enabled: true
-      }
+      automatic_tax: { enabled: true }
     });
 
-    res.json({
-      sessionId: session.id,
-      url: session.url,
-      success: true
-    });
+    res.json({ sessionId: session.id, url: session.url, success: true });
   } catch (error) {
     console.error('Stripe Checkout Error:', error);
     res.status(400).json({ error: error.message, success: false });
   }
 });
 
-// ✅ Create Stripe Identity session
+// ✅ Stripe identity session
 app.post('/api/stripe/create-identity-session', async (req, res) => {
   try {
     const { return_url } = req.body;
@@ -205,12 +256,15 @@ app.get('/api/test', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: [
       'GET /api/health',
+      'POST /api/signup',
+      'GET /api/admin/summary',
       'POST /api/stripe/create-checkout-session',
       'POST /api/stripe/create-identity-session',
       'POST /api/stripe/webhook',
       'POST /api/refund-payment',
       'GET /api/terms',
-      'GET /api/privacy'
+      'GET /api/privacy',
+      'GET /api/test'
     ]
   });
 });
@@ -227,6 +281,8 @@ app.use('*', (req, res) => {
     error: 'Endpoint not found',
     available_endpoints: [
       'GET /api/health',
+      'POST /api/signup',
+      'GET /api/admin/summary',
       'POST /api/stripe/create-checkout-session',
       'POST /api/stripe/create-identity-session',
       'POST /api/stripe/webhook',
