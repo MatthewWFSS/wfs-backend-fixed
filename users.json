@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "user_001",
+    "fullName": "Test User",
+    "dob": "1990-01-01",
+    "address": "123 Testing Lane, Testville, TX",
+    "email": "test@wfss.com",
+    "phone": "5551234567",
+    "password": "password123",
+    "safetyScore": 600,
+    "spending": 0
+  }
+]
